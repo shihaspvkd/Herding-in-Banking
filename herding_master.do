@@ -15,12 +15,9 @@ set varabbrev off
 if "`c(username)'" == "Shihas Abdul Razak" global root "C:\Users\Shihas Abdul Razak\Dropbox\Research/Herding"
 if "`c(username)'" == "DELL" global root "C:\Users\DELL\Dropbox\Research\Herding"
 
-*this code will show the username
-di "`c(username)'"
-
 cd "${root}"
 
-{/*** Data wrangling ***/
+/*** Data wrangling ***/
 
 *************
 *** OSMOS ***
@@ -34,7 +31,7 @@ global osmos_clean "$root/data/derived/OSMOS"
 cap mkdir "$root/data/derived"
 cap mkdir "$root/data/derived/OSMOS"
 
-{/*** OSMOS Data, 18 sectors (including pre_2015 data) ***/
+/*** OSMOS Data, 18 sectors (including pre_2015 data) ***/
 
 import excel "$osmos_raw/OSMOS_Data_25-4-2019_edit.xlsx", sheet("Sheet1") firstrow clear
 
@@ -80,10 +77,10 @@ drop if qtr<210
 
 save "$osmos_clean/OSMOS1.dta", replace
 
-}
 
 
-{/*** OSMOS Data, 28 sectors (only post-2015 data) ***/
+
+/*** OSMOS Data, 28 sectors (only post-2015 data) ***/
 
 import excel "$osmos_raw/Sectoral Distribution of Credit_Data_OSMOS_26-12-19_edit1.xlsx", sheet("Sheet 1") firstrow clear
 
@@ -116,9 +113,9 @@ rename *value* **
 
 save "$osmos_clean/OSMOS2.dta", replace
 
-}
 
-{/*** Compiling both data ***/
+
+/*** Compiling both data ***/
 
 use "$osmos_clean/OSMOS2.dta", clear
 
@@ -138,7 +135,7 @@ duplicates drop BankName sector qtr, force
 drop if sector== "Priority Agriculture and Allied Activities"
 
 save "$osmos_clean/OSMOS_compiled.dta", replace
-}
+
 
 
 *************************
@@ -152,7 +149,7 @@ cap mkdir "$root/data/derived/Economic Activity"
 global eco_raw "$root/data/raw/Economic Activity"
 global eco_clean "$root/data/derived/Economic Activity"
 
-{/*** GVA ***/
+/*** GVA ***/
 
 import excel "$eco_raw\HBS_Table_No._158___Quarterly_Estimates_of_Gross_Domestic_Product_at_Factor_Cost_(at_Current_Prices)_(New_Series)_(Base__2004-05)_reshaped.xlsx", sheet("Sheet 1") firstrow
 
@@ -164,9 +161,9 @@ gen qtr=qofd( date )
 drop ReportingDate date
 
 save "$eco_clean\gva.dta", replace
-}
 
-{/*** PFCE ***/
+
+/*** PFCE ***/
 
 import excel "$eco_raw\HBS_Table_No._03___Components_of_Gross_Domestic_Product_(at_Factor_Cost).xlsx", sheet("Sheet1") firstrow clear
 
@@ -180,9 +177,9 @@ replace qtr = qtr - 3 // adjusting for fiscal year since we did create this with
 drop year Date
 
 save "$eco_clean/pfce.dta", replace
-}
 
-{/*** Compiling and Matching sectors ***/
+
+/*** Compiling and Matching sectors ***/
 
 *dta file of sector matches
 import excel "$eco_raw\Matching sector.xlsx", sheet("Sheet1") firstrow clear
@@ -193,7 +190,6 @@ use "$eco_clean\gva.dta", clear
 append using "$eco_clean\pfce.dta"
 save "$eco_clean/gva + pfce.dta", replace
 
-}
 
 
 *****************
@@ -232,7 +228,7 @@ global bank_raw "$root/data/raw/Bank Financials"
 global bank_clean "$root/data/derived/Bank Financials"
 
 
-{/*** ROA and TA Data for latest quarters ***/
+/*** ROA and TA Data for latest quarters ***/
 
 import excel "$osmos_raw/Sectoral Distribution of Credit_Data_OSMOS_26-12-19_edit1.xlsx", sheet("Sheet 1") firstrow clear
 
@@ -250,9 +246,9 @@ rename ReturnonTotalAssetsannualiz ROA
 duplicates drop BankName qtr, force
 
 save "$bank_clean/ROA and TA 15-19.dta", replace
-}
 
-{/*** ROA and TA Data for whole sample***/
+
+/*** ROA and TA Data for whole sample***/
 import excel "$bank_raw\Bank_financials.xlsx", sheet("Sheet1") firstrow clear
 
 drop if BankType != "PRIVATE SECTOR BANKS" & BankType != "PUBLIC SECTOR BANKS"
@@ -278,9 +274,9 @@ drop identifier _merge identifier1
 
 sort BankName qtr
 save "$bank_clean/ROA and TA - Full sample.dta", replace
-}
 
-{/*** Finding top and profitable banks ***/
+
+/*** Finding top and profitable banks ***/
 
 use "$bank_clean/ROA and TA - Full sample.dta", clear
 
@@ -302,34 +298,37 @@ putexcel set "$bank_clean/Threshold values", replace
 *ROA p50
 quietly putexcel A1=("qtr") B1=("ROA_p50")
 tabstat ROA , by( qtr )  statistics(p50) save
+
 forvalues i = 210/238 {
-		local x = `i' - 209
-		mat A`x' = r(Stat`x')
-		local row = `x'+ 1
-		qui putexcel A`row'=(`i') B`row'=A`x'[1,1]
-		sleep 500
+	local x = `i' - 209
+	mat A`x' = r(Stat`x')
+	local row = `x'+ 1
+	qui putexcel A`row'=(`i') B`row'=A`x'[1,1]
+	sleep 500
 	}
 
 *ROA p75
 quietly putexcel C1=("ROA_p75")
 tabstat ROA , by( qtr )  statistics(p75) save
+
 forvalues i = 210/238 {
-		local x = `i' - 209
-		mat A`x' = r(Stat`x')
-		local row = `x'+ 1
-		qui putexcel C`row'=A`x'[1,1]
-		sleep 500
+	local x = `i' - 209
+	mat A`x' = r(Stat`x')
+	local row = `x'+ 1
+	qui putexcel C`row'=A`x'[1,1]
+	sleep 500
 	}
 
 *Total Assets p50
 quietly putexcel D1=("size")
 tabstat TotalAssets , by( qtr )  statistics(median) save
+
 forvalues i = 210/238 {
-		local x = `i' - 209
-		mat A`x' = r(Stat`x')
-		local row = `x'+ 1
-		qui putexcel D`row'=A`x'[1,1]
-		sleep 500
+	local x = `i' - 209
+	mat A`x' = r(Stat`x')
+	local row = `x'+ 1
+	qui putexcel D`row'=A`x'[1,1]
+	sleep 500
 	}
 
 *generating merge file for big and profitable banks
@@ -343,22 +342,22 @@ restore
 merge m:m qtr using "$bank_clean\Threshold values.dta", nogen
 
 foreach i in 50 75{
-		gen big_prof_`i' = 0
-		replace big_prof_`i' = 1 if ROA >= ROA_p`i' & TotalAssets >= size
+	gen big_prof_`i' = 0
+	replace big_prof_`i' = 1 if ROA >= ROA_p`i' & TotalAssets >= size
 	}
 
 keep BankName qtr big_prof_50 big_prof_75
 
 save "$bank_clean/big and prof banks.dta", replace
 
-}
+
 
 
 ****************************
 *** Generating Variables ***
 ****************************
 
-{/*** Generating Different files for Advances Outstanding of different groups ***/
+/*** Generating Different files for Advances Outstanding of different groups ***/
 
 use "$root/data/derived/master_herding.dta", clear
 
@@ -388,19 +387,17 @@ restore
 
 *Big Profitable
 foreach i in 50 75{
+	preserve
+	merge m:m BankName qtr using "$root\data\derived\Bank Financials\big and prof banks.dta", nogen
+	keep if big_prof_`i' == 1
+	bys sector qtr: egen AO_prof`i'= total (AdvancesOutstanding)
+	duplicates drop ( sector qtr ), force
+	keep sector qtr AO_prof`i'
 
-preserve
+	save "$root\data\derived/AO Prof `i'.dta",replace
 
-merge m:m BankName qtr using "$root\data\derived\Bank Financials\big and prof banks.dta", nogen
-keep if big_prof_`i' == 1
-bys sector qtr: egen AO_prof`i'= total (AdvancesOutstanding)
-duplicates drop ( sector qtr ), force
-keep sector qtr AO_prof`i'
-
-save "$root\data\derived/AO Prof `i'.dta",replace
-
-restore
-}
+	restore
+	}
 
 * Creating Bank ID
 preserve
@@ -434,8 +431,8 @@ preserve
 merge m:m sector qtr using "$root\data\derived\wide Advances Outstanding without adjustment.dta", nogen
 
 forvalues i = 1/61{
-		replace AO_B`i' = . if bank_id == "B`i'"
-		label var AO_B`i' "B`i' Advances Outstanding"
+	replace AO_B`i' = . if bank_id == "B`i'"
+	label var AO_B`i' "B`i' Advances Outstanding"
 	}
 
 save "$root\data\derived\wide Advances Outstanding.dta", replace
@@ -443,16 +440,17 @@ save "$root\data\derived\wide Advances Outstanding.dta", replace
 
 restore
 
-}
 
-{/*** Merging and Generating Other variables ***/
+
+/*** Merging and Generating Other variables ***/
 
 use "$root/data/derived/master_herding.dta", clear
 
 *merging other files
 local files `" "AO Big Banks" "AO Pvt Big" "AO Prof 50" "AO Prof 75" "'
+
 foreach filename of local files{
-		merge m:m sector qtr using "$root\data\derived/`filename'.dta", nogen
+	merge m:m sector qtr using "$root\data\derived/`filename'.dta", nogen
 	}
 
 merge m:m sector qtr BankName using "$root\data\derived/wide Advances Outstanding.dta", nogen
@@ -478,19 +476,19 @@ label var GNPA_sector "Sectoral GNPA"
 local varlist "  AdvancesOutstanding GNPAs eco_act AO_big5 AO_big2 AO_pvt_big AO_prof50 AO_prof75 AO_all AO_O GNPA_sector "
 
 foreach var of local varlist{
-		gen `var'_1 = 1 + `var'
-		gen log_`var' = ln(`var'_1)
-		drop `var'_1
-		local label : var label `var'
-		label var log_`var' "Log of `label'"
+	gen `var'_1 = 1 + `var'
+	gen log_`var' = ln(`var'_1)
+	drop `var'_1
+	local label : var label `var'
+	label var log_`var' "Log of `label'"
 	}
 
 forvalues i = 1/61{
-		gen AO_B`i'_1 = 1 + AO_B`i'
-		gen log_AO_B`i' = ln(AO_B`i'_1)
-		drop AO_B`i'_1
-		local label : var label AO_B`i'
-		label var log_AO_B`i' "Log of `label'"
+	gen AO_B`i'_1 = 1 + AO_B`i'
+	gen log_AO_B`i' = ln(AO_B`i'_1)
+	drop AO_B`i'_1
+	local label : var label AO_B`i'
+	label var log_AO_B`i' "Log of `label'"
 	}
 
 *yoy growth of eco_activity
@@ -545,23 +543,23 @@ program hamiltonfilter_sar
 	qui confirm new var `stub'_cycle_hamilton
 
 	
-					generate double `stub'_trend_hamilton  = . if `touse'
-					label var `stub'_trend_hamilton "`stub' Trend Component - Hamilton Filter"
-					generate double `stub'_cycle_hamilton  = . if `touse'
-					label var `stub'_cycle_hamilton "`stub' Cyclical Component - Hamilton Filter"
-					local nbpays = `panelvar'[_N]	
-					confirm new var `stub'_trendprov
-					confirm new var `stub'_cycleprov
-					forvalues i = 1/`nbpays' {
-												capture {
-														 regress `ydepvarb' L(8/11).`ydepvarb' if `touse' & `panelvar' == `i'
-														 predict double `stub'_trendprov if `touse' & `panelvar' == `i', xb
-														 predict double `stub'_cycleprov if `touse' & `panelvar' == `i', residuals
-														 replace `stub'_trend_hamilton = `stub'_trendprov if `touse' & `panelvar' == `i'
-														 replace `stub'_cycle_hamilton = `stub'_cycleprov if `touse' & `panelvar' == `i'
-														 drop `stub'_trendprov `stub'_cycleprov
-											  		    }
-											 }
+				generate double `stub'_trend_hamilton  = . if `touse'
+				label var `stub'_trend_hamilton "`stub' Trend Component - Hamilton Filter"
+				generate double `stub'_cycle_hamilton  = . if `touse'
+				label var `stub'_cycle_hamilton "`stub' Cyclical Component - Hamilton Filter"
+				local nbpays = `panelvar'[_N]	
+				confirm new var `stub'_trendprov
+				confirm new var `stub'_cycleprov
+				forvalues i = 1/`nbpays' {
+						 capture {
+								regress `ydepvarb' L(8/11).`ydepvarb' if `touse' & `panelvar' == `i'
+								predict double `stub'_trendprov if `touse' & `panelvar' == `i', xb
+								predict double `stub'_cycleprov if `touse' & `panelvar' == `i', residuals
+								replace `stub'_trend_hamilton = `stub'_trendprov if `touse' & `panelvar' == `i'
+								replace `stub'_cycle_hamilton = `stub'_cycleprov if `touse' & `panelvar' == `i'
+								drop `stub'_trendprov `stub'_cycleprov
+								}
+								}
 end
 
 
@@ -571,10 +569,10 @@ hamiltonfilter_sar log_AO_ipolated, stub(AO)
 
 save "$root\data\derived\herding_analyses.dta", replace
 
-}
 
 
-{/*** Analyses ***/
+
+/*** Analyses ***/
 
 use "$root\data\derived\herding_analyses.dta", clear
 
@@ -589,30 +587,30 @@ xtset groupid qtr
 local varlist " log_AO_all log_AO_big5 log_AO_big2 log_AO_pvt_big log_AO_prof50 log_AO_prof75 "
 
 foreach var of local varlist{
-qui xtreg AO_cycle_hp L.`var' L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
-eststo M1
-qui xtreg AO_cycle_hp L.`var' L.D.log_GNPAs L.log_eco_act, fe
-eststo M2
-qui xtreg AO_cycle_hp L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
-eststo M3
+	qui xtreg AO_cycle_hp L.`var' L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
+	eststo M1
+	qui xtreg AO_cycle_hp L.`var' L.D.log_GNPAs L.log_eco_act, fe
+	eststo M2
+	qui xtreg AO_cycle_hp L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
+	eststo M3
 
-local label : var label `var'
+	local label : var label `var'
 
-*esttab M1 M2 M3 using "$root/scratch/results_cyc_`var'.txt", title("Cyclical Component against `label'") star(* .1 ** .05 *** .01) label replace
-esttab M1 M2 M3 , title("Cyclical Component against `label'") star(* .1 ** .05 *** .01) label 
+	*esttab M1 M2 M3 using "$root/scratch/results_cyc_`var'.txt", title("Cyclical Component against `label'") star(* .1 ** .05 *** .01) label replace
+	esttab M1 M2 M3 , title("Cyclical Component against `label'") star(* .1 ** .05 *** .01) label 
 
-qui xtreg D.AO_trend_hp L.`var' L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
-eststo M4
-qui xtreg D.AO_trend_hp L.`var' L.D.log_GNPAs L.log_eco_act, fe
-eststo M5
-qui xtreg D.AO_trend_hp L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
-eststo M6
+	qui xtreg D.AO_trend_hp L.`var' L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
+	eststo M4
+	qui xtreg D.AO_trend_hp L.`var' L.D.log_GNPAs L.log_eco_act, fe
+	eststo M5
+	qui xtreg D.AO_trend_hp L.D.`var' L.D.log_GNPAs L.log_eco_act, fe
+	eststo M6
 
-*esttab M4 M5 M6 using "$root/scratch/results_trnd_`var'.txt", title("Growth in Trend Component against `label'") star(* .1 ** .05 *** .01) label replace
-esttab M4 M5 M6, title("Growth in Trend Component against `label'") star(* .1 ** .05 *** .01) label 
+	*esttab M4 M5 M6 using "$root/scratch/results_trnd_`var'.txt", title("Growth in Trend Component against `label'") star(* .1 ** .05 *** .01) label replace
+	esttab M4 M5 M6, title("Growth in Trend Component against `label'") star(* .1 ** .05 *** .01) label 
 
+	}
 
-}
 
 log close
 
@@ -627,12 +625,12 @@ qui levelsof sector, local(sectors)
 foreach sect of local sectors{
 	preserve
 	keep if sector == "`sect'"
-			forvalues i = 1/61{
-				qui mdesc log_AO_B`i'
-				if `r(percent)' > 50 {
-										cap qui drop log_AO_B`i'
-										}
-			}
+	forvalues i = 1/61{
+			qui mdesc log_AO_B`i'
+			if `r(percent)' > 50 {
+					cap qui drop log_AO_B`i'
+					}
+		          }
 	
 	xtset bank qtr
 	
@@ -644,8 +642,6 @@ foreach sect of local sectors{
 	esttab M1 M2, title("`sect'") star(* .1 ** .05 *** .01) mlabels("Cyclical Comp." "D.Trend Component")
 	
 	restore
-}
+	}
 
 log close
-
-}
